@@ -4,10 +4,11 @@ import json
 from banana import connection
 import requests
 from bs4 import BeautifulSoup
+from constants import *
 
 debug = False
-ajax_movie_episodes = 'https://solarmoviez.ru/ajax/v4_movie_episodes/'
-ajax_movie_embed = 'https://solarmoviez.ru/ajax/movie_embed/'
+ajax_movie_episodes = solar_domain + '/ajax/v4_movie_episodes/'
+ajax_movie_embed = solar_domain + '/ajax/movie_embed/'
 
 #------------------------------------------------------------------------------
 def streamango_encode_url(plain, key):

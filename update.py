@@ -3,9 +3,8 @@ from bs4 import BeautifulSoup
 from banana import connection
 from slackclient import SlackClient
 from credentials import *
+from constants import *
 import sqlite3, sys
-
-database_file = 'solarmoviez.ru.db'
 
 def is_new_record(conn, text_id):
     ret = conn.execute('SELECT 1 FROM movies WHERE id=?', (text_id,))
@@ -25,7 +24,7 @@ def update_database():
     done = False
     new_records = []
     while not done:
-        page_url='https://solarmoviez.ru/movie/filter/movies/latest/all/all/all/all/all/page-%d.html' % (idx)
+        page_url = solar_domain + '/movie/filter/movies/latest/all/all/all/all/all/page-%d.html' % (idx)
         req = session.get(page_url)        
         if req.status_code != 200:
             conn.close()

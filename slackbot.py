@@ -14,10 +14,7 @@ from credentials import *
 #   my_user     = 'xxxxxxxxx'
 #   slack_token = 'xxxx-xxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
-database_file='solarmoviez.ru.db'
-
 def db_title_from_id(text_id):
-    database_file='solarmoviez.ru.db'
     conn = sqlite3.connect(database_file)
     ret = conn.execute('SELECT title FROM movies WHERE id=?', (text_id,))
     result = ret.fetchone()
@@ -106,6 +103,11 @@ def info(args):
 
 bot_commands = {'!find': find, '!link': link, '!info': info, '!poster': poster, '!imdb': imdb_search}
 while True:
+    def log_message(msg):
+        with open('banana.log', 'a+') as fp:
+            fp.write('%s %s\n' % (time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()), msg))
+            fp.close()
+
     def is_message(m):
         if 'type' not in m:             return False
         if m['type'] != 'message':      return False
@@ -123,7 +125,7 @@ while True:
     if not sc.rtm_connect(with_team_state=False):
         time.sleep(1)
         continue
-    print(" .. connected");
+    log_message('online')
     while True:
         try:            
             for m in sc.rtm_read():
@@ -140,5 +142,7 @@ while True:
                     thread_ts = m['ts']                    
                 func = bot_commands[args[0]]
                 sc.rtm_send_message(my_channel, '<@'+m['user']+'>, ' + func(args[1:]), thread_ts)
+            time.sleep(1)
         except:
             break
+    log_message('offline')

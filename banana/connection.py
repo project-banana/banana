@@ -4,13 +4,14 @@ import pickle
 import socket
 import requests
 from selenium import webdriver
+from constants import *
 
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.75 Safari/537.36'
-get_cookies_url = 'https://solarmoviez.ru/movie/filter/movies.html'
+get_cookies_url = solar_domain + '/movie/filter/movies.html'
 cookies_file = 'cookies.pkl'
 session_file = 'session.pkl'
-#chrome_binary = '/opt/google/chrome/chrome'
-chrome_binary = '/tmp/Google Chrome.app/Contents/MacOS/Google Chrome'
+chrome_binary = '/opt/google/chrome/chrome'
+#chrome_binary = '/tmp/Google Chrome.app/Contents/MacOS/Google Chrome'
 cloudflare_sleep_delay = 10
 chrome_args = [
         '--start-maximized',
