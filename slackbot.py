@@ -2,7 +2,7 @@
 import time
 import sqlite3
 import subprocess
-from slackclient import SlackClient
+from slack import RTMClient
 import requests
 import re
 import json
@@ -11,9 +11,9 @@ from credentials import *
 from constants import *
 
 # credentials.py
-#   my_channel  = 'xxxxxxxxx'
-#   my_user     = 'xxxxxxxxx'
-#   slack_token = 'xxxx-xxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+#   MY_CHANNEL  = 'xxxxxxxxx'
+#   MY_USER     = 'xxxxxxxxx'
+#   SLACK_TOKEN = 'xxxx-xxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
 def db_title_from_id(text_id):
     conn = sqlite3.connect(database_file)
@@ -103,49 +103,41 @@ def info(args):
 #########################################################################
 
 bot_commands = {'!find': find, '!link': link, '!info': info, '!poster': poster, '!imdb': imdb_search}
-while True:
-    def log_message(msg):
-        with open('banana.log', 'a+') as fp:
-            s = '%s %s\n' % (time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()), msg)
-            print(s)
-            fp.write(s)
-            fp.close()
 
-    def is_message(m):
-        if 'type' not in m:             return False
-        if m['type'] != 'message':      return False
-        if 'channel' not in m:          return False
-        if m['channel'] != my_channel:  return False
-        if 'user' not in m:             return False
-        if m['user'] == my_user:        return False
-        if 'text' not in m:             return False
-        return True
+@RTMClient.run_on(event="message")
+def slackbot(**payload):
 
-    if not connection.is_online():
-        time.sleep(1)
-        continue
-    sc = SlackClient(slack_token)
-    if not sc.rtm_connect(with_team_state=False):
-        time.sleep(1)
-        continue
-    log_message('online')
-    while True:
-        try:
-            for m in sc.rtm_read():
-                if not is_message(m):
-                    time.sleep(1)
-                    continue
-                args = m['text'].split()
-                if args[0] not in bot_commands:
-                    continue
-                thread_ts = None
-                if 'thread_ts' in m:
-                    thread_ts = m['thread_ts']
-                else:
-                    thread_ts = m['ts']
-                func = bot_commands[args[0]]
-                sc.rtm_send_message(my_channel, '<@'+m['user']+'>, ' + func(args[1:]), thread_ts)
-            time.sleep(1)
-        except:
-            break
-    log_message('offline')
+    if ('data' not in payload) or ('web_client' not in payload):
+        return
+    data = payload['data']
+    web_client = payload['web_client']
+    if ('channel' not in data) or (data['channel'] != MY_CHANNEL):
+        return
+    channel_id = data['channel']
+    if ('user' not in data) or (data['user'] == MY_USER):
+        return
+    user = data['user']
+    if ('ts' not in data) or ('text' not in data):
+        return
+    thread_ts = data['ts']
+    if 'thread_ts' in data:
+        thread_ts = data['thread_ts']
+    text = data['text']
+
+    def reply(msg):
+        web_client.chat_postMessage(
+            channel=channel_id,
+            text=f"<@{user}>, {msg}",
+            thread_ts=thread_ts
+        )
+
+    args = text.split()
+    if (len(args) < 1) or (args[0] not in bot_commands):
+        return
+
+    func = bot_commands[args[0]]
+    return reply(func(args[1:]))
+
+if __name__ == '__main__':
+    rtm_client = RTMClient(token=SLACK_TOKEN)
+    rtm_client.start()

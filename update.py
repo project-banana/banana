@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from bs4 import BeautifulSoup
 from banana import connection
-from slackclient import SlackClient
+from slack import WebClient
 from credentials import *
 from constants import *
 import sqlite3, sys
@@ -58,15 +58,15 @@ def update_database():
 def slack_update(new_records):
     if len(new_records) < 1:
         return
-    sc = SlackClient(slack_token)
-    res = sc.api_call("chat.postMessage", channel=my_channel, text='*database updated!!*')
+    sc = WebClient(token=SLACK_TOKEN)
+    res = sc.chat_postMessage(channel=MY_CHANNEL, text='*database updated!!*')
     if not res['ok']:
         return
     for rec in new_records:
         msg = '`%s` *%s* %s' % (rec['text_id'], rec['title'], rec['poster_url'])
         if len(rec['quality']) > 0:
             msg = '`%s` *%s* _%s_ %s' % (rec['text_id'], rec['title'], rec['quality'], rec['poster_url'])
-        sc.api_call("chat.postMessage", channel=my_channel, text=msg, thread_ts=res['ts'])
+        sc.chat_postMessage(channel=MY_CHANNEL, text=msg, thread_ts=res['ts'])
 
 if __name__ == '__main__':
     if not connection.is_online():
