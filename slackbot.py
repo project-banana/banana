@@ -8,9 +8,10 @@ import re
 import json
 from banana import get_link, connection
 from credentials import *
+from constants import *
 
 # credentials.py
-#   my_channel  = 'xxxxxxxxx'  
+#   my_channel  = 'xxxxxxxxx'
 #   my_user     = 'xxxxxxxxx'
 #   slack_token = 'xxxx-xxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
@@ -43,7 +44,7 @@ def imdb_title(title):
             return 'https://www.imdb.com/title/' + imdb_id + '/';
     return 'nothing found, sry :cry:'
 
-def imdb_search(args):    
+def imdb_search(args):
     if len(args) < 1:
         return 'syntax is: `!imdb` *title*  or `!imdb` *id*'
     search = None
@@ -67,7 +68,7 @@ def link(args):
         if 'subs' in item:
             result += '```%s```\n' %(item['subs'],)
     return result
-    
+
 def poster(args):
     if len(args) < 1:
         return 'syntax is: `!poster` *id*';
@@ -86,7 +87,7 @@ def find(args):
         return 'syntax is: `!find` *title*'
     conn = sqlite3.connect(database_file)
     ret = conn.execute("SELECT id, title, quality FROM movies WHERE title LIKE ?;", ('%' + '%'.join(args) + '%',))
-    result = ret.fetchall() 
+    result = ret.fetchall()
     conn.close()
     response='found ' + str(len(result)) + ' matches\n'
     for movie in result:
@@ -105,7 +106,9 @@ bot_commands = {'!find': find, '!link': link, '!info': info, '!poster': poster, 
 while True:
     def log_message(msg):
         with open('banana.log', 'a+') as fp:
-            fp.write('%s %s\n' % (time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()), msg))
+            s = '%s %s\n' % (time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()), msg)
+            print(s)
+            fp.write(s)
             fp.close()
 
     def is_message(m):
@@ -127,7 +130,7 @@ while True:
         continue
     log_message('online')
     while True:
-        try:            
+        try:
             for m in sc.rtm_read():
                 if not is_message(m):
                     time.sleep(1)
@@ -139,7 +142,7 @@ while True:
                 if 'thread_ts' in m:
                     thread_ts = m['thread_ts']
                 else:
-                    thread_ts = m['ts']                    
+                    thread_ts = m['ts']
                 func = bot_commands[args[0]]
                 sc.rtm_send_message(my_channel, '<@'+m['user']+'>, ' + func(args[1:]), thread_ts)
             time.sleep(1)

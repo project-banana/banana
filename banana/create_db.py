@@ -1,8 +1,7 @@
 from bs4 import BeautifulSoup
 from banana import connection
 import sqlite3, sys
-
-database_file = 'solarmoviez.ru.db'
+from constants import *
 
 def create_database():
     conn = sqlite3.connect(database_file)
@@ -15,7 +14,7 @@ def create_database():
     done = False
     while not done:
         page_url='https://solarmoviez.ru/movie/filter/movies/latest/all/all/all/all/all/page-%d.html' % (idx)
-        req = session.get(page_url)        
+        req = session.get(page_url)
         if req.status_code != 200:
             conn.close()
             sys.exit('error: status code, %d' % (req.status_code))
@@ -26,7 +25,7 @@ def create_database():
             done = True
             break
         for item in items:
-            href = item.a['href']            
+            href = item.a['href']
             title = item.a['title']
             data_url = item.a['data-url']
             poster_url = item.img['data-original']
@@ -35,6 +34,6 @@ def create_database():
                 quality = item.span.text
             text_id = data_url.split('.html')[0].split('/')[-1]
             id_ = int(text_id)
-            cursor.execute('INSERT INTO movies VALUES (?,?,?,?,?,?,?)', (id_, text_id, href, title, data_url, poster_url, quality))           
+            cursor.execute('INSERT INTO movies VALUES (?,?,?,?,?,?,?)', (id_, text_id, href, title, data_url, poster_url, quality))
         conn.commit()
     conn.close()

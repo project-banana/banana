@@ -25,7 +25,7 @@ def update_database():
     new_records = []
     while not done:
         page_url = solar_domain + '/movie/filter/movies/latest/all/all/all/all/all/page-%d.html' % (idx)
-        req = session.get(page_url)        
+        req = session.get(page_url)
         if req.status_code != 200:
             conn.close()
             sys.exit('error: status code, %d' % (req.status_code))
@@ -34,7 +34,7 @@ def update_database():
         items = soup.find_all('div', class_='ml-item')
         new_on_this_page = 0
         for item in items:
-            href = item.a['href']            
+            href = item.a['href']
             title = item.a['title']
             data_url = item.a['data-url']
             poster_url = item.img['data-original']
@@ -48,7 +48,7 @@ def update_database():
             new_on_this_page += 1
             record = {'href': href, 'title': title, 'data_url': data_url, 'poster_url': poster_url, 'quality': quality, 'text_id': text_id}
             new_records.append(record)
-            cursor.execute('INSERT INTO movies VALUES (?,?,?,?,?,?,?)', (id_, text_id, href, title, data_url, poster_url, quality))           
+            cursor.execute('INSERT INTO movies VALUES (?,?,?,?,?,?,?)', (id_, text_id, href, title, data_url, poster_url, quality))
         conn.commit()
         if new_on_this_page == 0:
             break

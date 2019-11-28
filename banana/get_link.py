@@ -86,21 +86,19 @@ def get_streamango_link(session, sm_url):
     result = streamango_decode_url(sm_json[0], sm_json[1])
     if result[0:2] == '//':
         result = 'https:' + result
-    if debug:        
+    if debug:
         print(og_title, result)
     return True, {'title':og_title, 'link':result} #FIXME: add subtitle url to result
 
 #------------------------------------------------------------------------------
 def get_vidcloud_link(session, url):
-    base1 = 'https://vcstream.to'
-    base2 = 'https://loadvid.online'
+    domains = ['https://vcstream.to', 'https://loadvid.online', 'https://vidcloud.co']
     base = None
-
-    if url.startswith(base1 + '/embed/'):
-        base = base1
-    elif url.startswith(base2 + '/embed/'):
-        base = base2
-    else:
+    for d in domains:
+        if url.startswith(d + '/embed/'):
+            base = d
+            break
+    if not base:
         return False, None
     starts = base + '/embed/'
 
@@ -132,9 +130,9 @@ def get_vidcloud_link(session, url):
     try:
         result = json.loads(file_json)
     except:
-        print('get_vidcloud_link() failed, couldnt parse javascript')
+        if debug: print('get_vidcloud_link() failed, couldnt parse javascript')
         return False, None
-    filelink = result['file']        
+    filelink = result['file']
     if debug:
         print('vidcloud url', filelink)
     tracks = vc_html[vc_html.find('tracks = [{"file"') + 9:]
@@ -181,6 +179,8 @@ def get_episode(session, episode):
         return get_vidcloud_link(session, url3)
     elif url3.startswith('https://loadvid.online/embed/'):
         return get_vidcloud_link(session, url3);
+    elif url3.startswith('https://vidcloud.co/embed/'):
+        return get_vidcloud_link(session, url3);
     elif url3.startswith('https://streamango.com/embed/'):
         return get_streamango_link(session, url3)
     else:
@@ -196,6 +196,7 @@ def get_link(movie_id, retry_cloudflare=True):
     session = connection.session_init()
     url1 = ajax_movie_episodes + movie_id
     req1 = session.get(url1)
+    if debug: print(url1)
     if req1.status_code == 503 and retry_cloudflare == True:        #cloudflare
         connection.session_destroy()                                #
         get_link(movie_id, False)                                   #if 503, remove session and cookies and retry
@@ -204,6 +205,7 @@ def get_link(movie_id, retry_cloudflare=True):
             print('failed at step 1a: ', ajax_movie_episodes, 'response code: ', req1.status_code)
         return False, None
     json1 = json.loads(req1.content.decode('utf-8'))
+    if debug: print('STEP 1-A', json1)
     if not json1['status']:
         if debug:
             print('failed at step 1b: ', ajax_movie_episodes, 'response json status: ', json1['status'])
@@ -225,14 +227,14 @@ def get_link(movie_id, retry_cloudflare=True):
         ep['server'] = li['data-server']
         ep['text'] = li.text.strip()
         episodes[index].append(ep)
-        
+
 #--[step 2]--------------------------------------------------------------------
-    if debug:        
-        print(servers, episodes)
+    if debug:
+        print('STEP 2', servers, episodes)
 
     result = []
     for ep in episodes:
-        idx = pick_preferred_mirror(episodes[ep], servers, 'OPENLOAD')
+        idx = pick_preferred_mirror(episodes[ep], servers, 'VidCloud')          # preferred
         if idx:
             success, data = get_episode(session, episodes[ep][idx])
             if success:
@@ -247,7 +249,7 @@ def get_link(movie_id, retry_cloudflare=True):
             if success:
                 result.append(data)
                 break   # break out of mirrors loop because we have a valid link
-    if len(result) > 0:            
+    if len(result) > 0:
         return True, result
     else:
         return False, None
@@ -256,7 +258,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.exit('give me a solarmoviez id')
     success, data = get_link(sys.argv[1])
-    print('success:', success)
+    if debug: print('success:', success)
     if success:
         for item in data:
             print(item)
